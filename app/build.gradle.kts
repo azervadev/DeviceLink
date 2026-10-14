@@ -15,7 +15,7 @@ android {
 
     defaultConfig {
         applicationId = "rozertech.azerva.devicelink"
-        minSdk = 31
+        minSdk = 33
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"

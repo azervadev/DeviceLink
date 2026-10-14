@@ -1,4 +1,4 @@
-package rozertech.azerva.devicelink.domain.repository
+package rozertech.azerva.devicelink.data.local
 
 import androidx.room.Dao
 import androidx.room.Insert

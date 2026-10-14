@@ -29,6 +29,7 @@ roomRuntime = "2.8.5"
 
 #Work manager
 workRuntimeKtx = "2.12.0"
+hiltCommon = "1.4.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -68,6 +69,7 @@ androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "
 
 #Work manager
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
+androidx-hilt-common = { group = "androidx.hilt", name = "hilt-common", version.ref = "hiltCommon" }
 
 
 

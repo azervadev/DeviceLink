@@ -1,4 +1,4 @@
-package rozertech.azerva.devicelink.domain.model
+package rozertech.azerva.devicelink.data.local
 
 import androidx.room.Entity
 import androidx.room.Index

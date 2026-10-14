@@ -2,7 +2,6 @@ package rozertech.azerva.devicelink.data.local
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import rozertech.azerva.devicelink.domain.model.EventEntity
 import rozertech.azerva.devicelink.domain.model.EventKind
 import rozertech.azerva.devicelink.domain.model.EventLog
 import rozertech.azerva.devicelink.domain.repository.EventRepository

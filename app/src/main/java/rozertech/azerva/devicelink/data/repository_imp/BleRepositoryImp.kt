@@ -36,7 +36,9 @@ import rozertech.azerva.devicelink.core.util.PayloadCodec
 import rozertech.azerva.devicelink.domain.model.BlePeripheral
 import rozertech.azerva.devicelink.domain.model.GattAttribute
 import rozertech.azerva.devicelink.domain.model.GattSnapshot
+import rozertech.azerva.devicelink.domain.repository.BleRepository
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Android BLE implementation for API 33 and later.
@@ -54,7 +56,7 @@ import java.util.UUID
 @Singleton
 class BleRepositoryImp @Inject constructor(
     @ApplicationContext private val context: Context
-) {
+) : BleRepository {
     private val manager = context.getSystemService(BluetoothManager::class.java)
     private val adapter get() = manager?.adapter
 
@@ -69,12 +71,12 @@ class BleRepositoryImp @Inject constructor(
     private val connectionState = MutableStateFlow<GattSnapshot?>(null)
 
     /** Current GATT state; null when no connection is active. */
-    val connection: StateFlow<GattSnapshot?> = connectionState.asStateFlow()
+    override val connection: StateFlow<GattSnapshot?> = connectionState.asStateFlow()
 
     private val notificationEvents = MutableSharedFlow<String>(extraBufferCapacity = 32)
 
     /** Received notifications as bounded uppercase hexadecimal strings. */
-    val notifications: Flow<String> = notificationEvents.asSharedFlow()
+    override val notifications: Flow<String> = notificationEvents.asSharedFlow()
 
     private enum class Operation { DISCOVER, READ, WRITE, SUBSCRIBE }
 
@@ -115,7 +117,7 @@ class BleRepositoryImp @Inject constructor(
      *
      * @return Cold Flow of discovered BLE peripherals.
      */
-    fun scan(): Flow<BlePeripheral> = callbackFlow {
+    override fun scan(): Flow<BlePeripheral> = callbackFlow {
         if (context.checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) !=
             PackageManager.PERMISSION_GRANTED ||
             context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) !=
@@ -359,7 +361,7 @@ class BleRepositoryImp @Inject constructor(
      * @param address Bluetooth address from a recent scan.
      * @return Success after service discovery, otherwise a failure Result.
      */
-    suspend fun connect(address: String): Result<Unit> = operationMutex.withLock {
+    override suspend fun connect(address: String): Result<Unit> = operationMutex.withLock {
         if (!BluetoothAdapter.checkBluetoothAddress(address)) {
             return@withLock Result.failure(IllegalArgumentException("Invalid BLE address"))
         }
@@ -404,7 +406,7 @@ class BleRepositoryImp @Inject constructor(
                 error("Connection was interrupted")
             }
 
-            val reply = withTimeout(12_000L) { request.response.await() }
+            val reply = withTimeout(12000.milliseconds) { request.response.await() }
             check(reply.status == BluetoothGatt.GATT_SUCCESS &&
                     connectionState.value?.connected == true
             ) { "Connection or service discovery failed (${reply.status})" }
@@ -464,7 +466,7 @@ class BleRepositoryImp @Inject constructor(
             request = current
 
             check(start(source, target)) { "Android rejected the GATT operation" }
-            val reply = withTimeout(8_000L) { current.response.await() }
+            val reply = withTimeout(8000.milliseconds) { current.response.await() }
             check(reply.status == BluetoothGatt.GATT_SUCCESS) {
                 "GATT operation failed (${reply.status})"
             }
@@ -491,7 +493,7 @@ class BleRepositoryImp @Inject constructor(
      * @param attribute Characteristic supporting PROPERTY_READ.
      * @return Hexadecimal payload, or a failure Result.
      */
-    suspend fun read(attribute: GattAttribute): Result<String> {
+    override suspend fun read(attribute: GattAttribute): Result<String> {
         if (!attribute.readable) {
             return Result.failure(IllegalArgumentException("Characteristic not readable"))
         }
@@ -520,9 +522,9 @@ class BleRepositoryImp @Inject constructor(
      *
      * @param attribute Characteristic supporting write with response.
      * @param bytes Payload to send.
-     * @return Success when the GATT callback confirms the write.
+     * @return Success when the GATT callback confirms.
      */
-    suspend fun write(attribute: GattAttribute, bytes: ByteArray): Result<Unit> {
+    override suspend fun write(attribute: GattAttribute, bytes: ByteArray): Result<Unit> {
         if (!attribute.writable) {
             return Result.failure(IllegalArgumentException("Characteristic not writable"))
         }
@@ -547,7 +549,7 @@ class BleRepositoryImp @Inject constructor(
                     BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
                 ) == BluetoothStatusCodes.SUCCESS
             },
-            decode = { Unit }
+            decode = {  }
         )
     }
 
@@ -557,7 +559,7 @@ class BleRepositoryImp @Inject constructor(
      * @param attribute Characteristic supporting notify or indicate.
      * @return Success when the descriptor write callback confirms the request.
      */
-    suspend fun subscribe(attribute: GattAttribute): Result<Unit> {
+    override suspend fun subscribe(attribute: GattAttribute): Result<Unit> {
         if (!attribute.notifiable) {
             return Result.failure(IllegalArgumentException("Notifications unavailable"))
         }
@@ -585,7 +587,7 @@ class BleRepositoryImp @Inject constructor(
                 }
                 source.writeDescriptor(descriptor, flag) == BluetoothStatusCodes.SUCCESS
             },
-            decode = { Unit }
+            decode = {  }
         )
     }
 
@@ -632,7 +634,7 @@ class BleRepositoryImp @Inject constructor(
     }
 
     /** Disconnects the active BLE peripheral and clears the connection state. */
-    fun disconnect() = closeConnection()
+    override fun disconnect() = closeConnection()
 
 
 
